@@ -32,7 +32,13 @@ namespace AzureCosmosEFCoreCRUD
             var accountKey = Configuration.GetValue<string>("CosmosDb:Key");
             var dbName = Configuration.GetValue<string>("CosmosDb:DatabaseName");
             services.AddDbContext<ApplicationDbContext>(x => x.UseCosmos(accountEndpoint, accountKey, dbName));
-           
+            services.AddCors(options =>
+            {
+                options.AddPolicy("CorsPolicy", builder => builder.WithOrigins("http://localhost:4200/")
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .AllowCredentials());
+            });
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
@@ -43,6 +49,8 @@ namespace AzureCosmosEFCoreCRUD
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            app.UseCors(options =>
+            options.WithOrigins("http://localhost:4200").AllowAnyMethod().AllowAnyHeader());
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
