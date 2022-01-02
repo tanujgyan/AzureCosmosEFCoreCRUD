@@ -1,6 +1,8 @@
 ﻿using AzureCosmosEFCoreCRUD.DBContext;
+using AzureCosmosEFCoreCRUD.HubConfig;
 using AzureCosmosEFCoreCRUD.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -18,12 +20,17 @@ namespace AzureCosmosEFCoreCRUD.Controllers
         private readonly ILogger _logger;
         private readonly ApplicationDbContext applicationDbContext;
         private readonly IConfiguration configuration;
+        private IHubContext<VideogameHub> _hub;
 
-        public VideogameController(ApplicationDbContext applicationDbContext, IConfiguration configuration, ILogger<VideogameController> logger)
+        public VideogameController(ApplicationDbContext applicationDbContext, 
+            IConfiguration configuration, 
+            ILogger<VideogameController> logger, 
+            IHubContext<VideogameHub> hub)
         {
             this.applicationDbContext = applicationDbContext;
             this.configuration = configuration;
             _logger = logger;
+            _hub = hub;
         }
         [HttpGet("GetAllVideogames")]
         public async Task<ActionResult<IList<Videogames>>> GetAllVideogames()
@@ -151,6 +158,7 @@ namespace AzureCosmosEFCoreCRUD.Controllers
                 await applicationDbContext.Videogames.AddAsync(videogame);
 
                 await applicationDbContext.SaveChangesAsync();
+                await _hub.Clients.All.SendAsync("transferdata", new List<Videogames>());
                 return Ok();
             }
             catch(Exception ex)
@@ -169,6 +177,7 @@ namespace AzureCosmosEFCoreCRUD.Controllers
                 {
                     applicationDbContext.Remove(videogame);
                     await applicationDbContext.SaveChangesAsync();
+                    await _hub.Clients.All.SendAsync("transferdata", new List<Videogames>());
                     return Ok();
                 }
                 return NotFound();
@@ -198,6 +207,7 @@ namespace AzureCosmosEFCoreCRUD.Controllers
                     itemBody.FirstOrDefault().Company.Country = companyDetails.Country;
                     applicationDbContext.Update(itemBody.FirstOrDefault());
                     await applicationDbContext.SaveChangesAsync();
+                    await _hub.Clients.All.SendAsync("transferdata", new List<Videogames>());
                     return Ok();
                 }
                 return NotFound();

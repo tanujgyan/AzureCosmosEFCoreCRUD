@@ -1,4 +1,5 @@
 using AzureCosmosEFCoreCRUD.DBContext;
+using AzureCosmosEFCoreCRUD.HubConfig;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -28,13 +29,14 @@ namespace AzureCosmosEFCoreCRUD
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddSignalR();
             var accountEndpoint = Configuration.GetValue<string>("CosmosDb:Account");
             var accountKey = Configuration.GetValue<string>("CosmosDb:Key");
             var dbName = Configuration.GetValue<string>("CosmosDb:DatabaseName");
             services.AddDbContext<ApplicationDbContext>(x => x.UseCosmos(accountEndpoint, accountKey, dbName));
             services.AddCors(options =>
             {
-                options.AddPolicy("CorsPolicy", builder => builder.WithOrigins("http://localhost:4200/")
+                options.AddPolicy("CorsPolicy", builder => builder.WithOrigins("http://localhost:4200")
                 .AllowAnyMethod()
                 .AllowAnyHeader()
                 .AllowCredentials());
@@ -50,7 +52,7 @@ namespace AzureCosmosEFCoreCRUD
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             app.UseCors(options =>
-            options.WithOrigins("http://localhost:4200").AllowAnyMethod().AllowAnyHeader());
+            options.WithOrigins("http://localhost:4200").AllowAnyMethod().AllowAnyHeader().AllowCredentials());
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -67,7 +69,9 @@ namespace AzureCosmosEFCoreCRUD
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                endpoints.MapHub<VideogameHub>("/Videogame");
             });
+
         }
     }
 }
